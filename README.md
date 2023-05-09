@@ -1,5 +1,5 @@
-# Clone Reference
-Clone Reference is a tool for Maya to clone or create multiple copies of external references keeping transforms from initial reference.
+# cloneReference
+**cloneReference** is a tool for Maya to clone or create multiple copies of external references keeping transforms from initial reference.
 
 <img src="https://github.com/AlbertoGZ-dev/cloneReference/blob/main/cloneReference.png"></img>
 
