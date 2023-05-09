@@ -159,10 +159,12 @@ class cloneReference(QtWidgets.QMainWindow):
         self.setStatusBar(self.statusBar)
         self.statusBar.messageChanged.connect(self.statusChanged)
 
-        # Spacer
-        separator = QtWidgets.QWidget()
-        separator.setFixedHeight(2)
-        separator.setStyleSheet("background-color:rgb(255,0,0)")
+        # Spacers
+        self.separator1 = QtWidgets.QWidget()
+        self.separator1.setFixedHeight(5)
+        self.separator2 = QtWidgets.QWidget()
+        self.separator2.setFixedHeight(5)
+       
 
         # Namespace type
         self.namespaceLabel = QtWidgets.QLabel('Namespace: ')
@@ -218,16 +220,20 @@ class cloneReference(QtWidgets.QMainWindow):
         layout2.addWidget(self.namespaceLabel, 1,0)
         layout2.addWidget(self.namespaceComboBox, 1,1)
         layout2.addWidget(self.namespaceCustomText, 2,1)
-        
-        layout2.addWidget(self.offsetXLabel, 3,0)
-        layout2.addWidget(self.offsetXSpinBox, 3,1)
-        layout2.addWidget(self.offsetYLabel, 4,0)
-        layout2.addWidget(self.offsetYSpinBox, 4,1)
-        layout2.addWidget(self.offsetZLabel, 5,0)
-        layout2.addWidget(self.offsetZSpinBox, 5,1)
 
-        layout2.addWidget(self.copiesLabel, 6,0)
-        layout2.addWidget(self.copiesSpinBox, 6,1)
+        layout2.addWidget(self.separator1, 3,0)
+        
+        layout2.addWidget(self.offsetXLabel, 4,0)
+        layout2.addWidget(self.offsetXSpinBox, 4,1)
+        layout2.addWidget(self.offsetYLabel, 5,0)
+        layout2.addWidget(self.offsetYSpinBox, 5,1)
+        layout2.addWidget(self.offsetZLabel, 6,0)
+        layout2.addWidget(self.offsetZSpinBox, 6,1)
+
+        layout2.addWidget(self.separator2, 7,0)
+        
+        layout2.addWidget(self.copiesLabel, 8,0)
+        layout2.addWidget(self.copiesSpinBox, 8,1)
 
         layout3.addWidget(self.cloneBtn)
 
