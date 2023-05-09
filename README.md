@@ -10,7 +10,7 @@ Clone Reference is a tool for Maya to clone or create multiple copies of externa
 Place the *cloneReference.py* and *\_\_init\_\_.py* files in a folder named *cloneReference* in your Maya scripts directory and create a python shell button with the following code:
 
 ```python
-from cloneReference import matchMcloneReferenceultiObject
+from cloneReference import cloneReferenceultiObject
 
 try:
     md_win.close()
