@@ -27,7 +27,7 @@ import maya.api.OpenMaya as om
 
 
 # GENERAL VARS
-version = '0.1.0'
+version = '0.1.1'
 about = 'by Alberto GZ'
 winWidth = 520
 winHeight = 500
@@ -359,10 +359,13 @@ class cloneReference(QtWidgets.QMainWindow):
 
         
 
-    ### CLONE REFERENCE
+    ### CLONE REFERENCE (main function)
+    #
     def clone(self):
         copies = self.copiesSpinBox.value()
         offset = [self.offsetXSpinBox.value(), self.offsetYSpinBox.value(), self.offsetZSpinBox.value()]
+        newItems = []
+        newItemsCleaned = []
 
         if len(itemSelected) < 1:
             self.statusBar.showMessage('Must be selected at least one item in the list', 4000)
@@ -370,30 +373,52 @@ class cloneReference(QtWidgets.QMainWindow):
         else:
 
             for ref in itemSelected:
+                # Get file path from each reference
                 refPath = cmds.referenceQuery(ref, f=1)
+
+                # Get reference node (RN)
                 refNode = cmds.referenceQuery(ref, rfn=1)
+
+                # Get position coordinates for each reference
+                refPos = cmds.xform(ref, q=1, t=1)
                 
+                # Get namespace from each reference or use custom name
                 if self.namespaceComboBox.currentText() == 'Custom':
                     refNS = self.namespaceCustomText.text()
                 else:
                     refNS = ref.split(':')[0]
                 
-                refPos = cmds.xform(ref, q=1, t=1)
+                print('--- Ref: '+str(ref))
 
-
+               
                 for n in range(copies):
-                    new = cmds.file(refPath, r=1, namespace=refNS, rnn=1)
-                    #cmds.select(new)
-                   
+                    # Create new reference
+                    new = (cmds.file(refPath, r=1, namespace=refNS, rnn=1))
+
+                    # Get the topnode only
+                    new = cmds.ls(new, assemblies=True)[0]
+                    print('--- New: '+str(new))
+                
+                    # Match transforms from initial reference to new reference
                     cmds.matchTransform(new, ref)
 
+                    # Compute position offset for each new reference
                     newPosX = refPos[0] + offset[0] + (offset[0]*n)
                     newPosY = refPos[1] + offset[1] + (offset[1]*n)
                     newPosZ = refPos[2] + offset[2] + (offset[2]*n)
 
+                    # Set position offset (WorldSpace)
                     cmds.xform(new, ws=1, t=(newPosX,  newPosY,  newPosZ) )
 
-            self.statusBar.showMessage(''+ str(len(itemSelected)) + ' items cloned successfuly!', 4000)
+
+                ## testing for grouping
+                #newItems.append(new[2].split(':')[0])
+                #print(newItems)
+                #cmds.group(new[2], name='grp1')
+               
+            
+            print('--- '+ str(len(itemSelected)) + ' items cloned successfully!')
+            self.statusBar.showMessage(''+ str(len(itemSelected)) + ' items cloned successfully!', 4000)
             self.statusBar.setStyleSheet('background-color:' + green)
 
 
