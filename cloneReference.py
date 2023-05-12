@@ -164,18 +164,19 @@ class cloneReference(QtWidgets.QMainWindow):
         self.separator1.setFixedHeight(5)
         self.separator2 = QtWidgets.QWidget()
         self.separator2.setFixedHeight(5)
+        self.separator3 = QtWidgets.QWidget()
+        self.separator3.setFixedHeight(5)
        
-
         # Namespace type
         self.namespaceLabel = QtWidgets.QLabel('Namespace: ')
         self.namespaceComboBox = QtWidgets.QComboBox()
         self.namespaceComboBox.addItems(['From selection', 'Custom'])
+        self.namespaceComboBox.currentIndexChanged.connect(self.namespaceType)
         self.namespaceCustomText = QtWidgets.QLineEdit('', self)
         self.namespaceCustomText.setPlaceholderText('namespace')
         self.namespaceCustomText.setVisible(False)
         self.namespaceCustomText.setMinimumWidth(140)
-        self.namespaceComboBox.currentIndexChanged.connect(self.namespaceType)
-
+        
         # Offset inputs
         self.offsetXLabel = QtWidgets.QLabel('Offset X: ')
         self.offsetXSpinBox = QtWidgets.QDoubleSpinBox()
@@ -195,7 +196,15 @@ class cloneReference(QtWidgets.QMainWindow):
         self.copiesSpinBox.setMinimum(1)
         self.copiesSpinBox.setValue(1)
         self.copiesSpinBox.setObjectName('copies')
-       
+
+        # Grouping controls
+        self.groupingLabel = QtWidgets.QLabel('Group copies: ')
+        self.groupingCheckBox = QtWidgets.QCheckBox('')
+        self.groupingCheckBox.clicked.connect(self.groupingCheck)
+        self.groupingNameText = QtWidgets.QLineEdit('myGroup01', self)
+        self.groupingNameText.setVisible(False)
+        self.groupingNameText.setMinimumWidth(100)
+    
         # Clone Reference button
         self.cloneBtn = QtWidgets.QPushButton('Clone Reference')
         self.cloneBtn.setFixedHeight(85)
@@ -234,6 +243,12 @@ class cloneReference(QtWidgets.QMainWindow):
         
         layout2.addWidget(self.copiesLabel, 8,0)
         layout2.addWidget(self.copiesSpinBox, 8,1)
+
+        layout2.addWidget(self.separator1, 9,0)
+
+        layout2.addWidget(self.groupingLabel, 10,0)
+        layout2.addWidget(self.groupingCheckBox, 10,1)
+        layout2.addWidget(self.groupingNameText, 11,1)
 
         layout3.addWidget(self.cloneBtn)
 
@@ -355,17 +370,23 @@ class cloneReference(QtWidgets.QMainWindow):
             self.namespaceCustomText.setVisible(False)
 
 
-    
 
-        
+    def groupingCheck(self):
+        if self.groupingCheckBox.isChecked():
+            self.groupingNameText.setVisible(True)
+        else:
+            self.groupingNameText.setVisible(False)
+    
+    
 
     ### CLONE REFERENCE (main function)
     #
     def clone(self):
+        suffixID = '_c0001'
         copies = self.copiesSpinBox.value()
         offset = [self.offsetXSpinBox.value(), self.offsetYSpinBox.value(), self.offsetZSpinBox.value()]
+        groupName = self.groupingNameText.text()
         newItems = []
-        newItemsCleaned = []
 
         if len(itemSelected) < 1:
             self.statusBar.showMessage('Must be selected at least one item in the list', 4000)
@@ -384,11 +405,11 @@ class cloneReference(QtWidgets.QMainWindow):
                 
                 # Get namespace from each reference or use custom name
                 if self.namespaceComboBox.currentText() == 'Custom':
-                    refNS = self.namespaceCustomText.text()
+                    refNS = self.namespaceCustomText.text()+suffixID
                 else:
-                    refNS = ref.split(':')[0]
+                    refNS = ref.split(':')[0]+suffixID
                 
-                print('--- Ref: '+str(ref))
+                print('\n--- Ref: '+str(ref))
 
                
                 for n in range(copies):
@@ -397,8 +418,9 @@ class cloneReference(QtWidgets.QMainWindow):
 
                     # Get the topnode only
                     new = cmds.ls(new, assemblies=True)[0]
-                    print('--- New: '+str(new))
-                
+                    print('\n--- New: '+str(new))
+
+    
                     # Match transforms from initial reference to new reference
                     cmds.matchTransform(new, ref)
 
@@ -411,13 +433,32 @@ class cloneReference(QtWidgets.QMainWindow):
                     cmds.xform(new, ws=1, t=(newPosX,  newPosY,  newPosZ) )
 
 
-                ## testing for grouping
-                #newItems.append(new[2].split(':')[0])
-                #print(newItems)
-                #cmds.group(new[2], name='grp1')
-               
+                    # Fill list and sorting
+                    newItems.append(new)
+                    newItemsSorted=sorted(newItems, key=lambda x: ''.join(reversed(x.split(':')[0])))
+
+
+                    # Divide list in chunks from the origin references selection amount
+                    def divide_chunks(l, n):
+                        for i in range(0, len(l), n):
+                            yield l[i:i + n]
+                    
+                    n = len(itemSelected)
+                    newItemsGrouped = list(divide_chunks(newItemsSorted, n))
+
+
+            # Create groups for each bundle of selection
+            if self.groupingCheckBox.isChecked():
+                for items in newItemsGrouped:
+                    cmds.group(items, name=groupName)
+       
             
-            print('--- '+ str(len(itemSelected)) + ' items cloned successfully!')
+            # Display log for results
+            print('\n--- New Items: '+str(newItems))
+            print('\n--- New Items Sorted: '+str(newItemsSorted))
+            print('\n--- New Items Grouped: '+str(newItemsGrouped))
+            
+            print('\n--- '+ str(len(itemSelected)) + ' items cloned successfully!')
             self.statusBar.showMessage(''+ str(len(itemSelected)) + ' items cloned successfully!', 4000)
             self.statusBar.setStyleSheet('background-color:' + green)
 
