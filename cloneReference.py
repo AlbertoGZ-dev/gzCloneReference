@@ -27,7 +27,7 @@ import maya.api.OpenMaya as om
 
 
 # GENERAL VARS
-version = '0.1.1'
+version = '0.1.2'
 about = 'by Alberto GZ'
 winWidth = 520
 winHeight = 500
@@ -36,9 +36,14 @@ green = '#207527'
 lightbrown = '#7d654b'
 lightpurple = '#604b69'
 lightgreen = '#5b694b'
-lightblue = '#4e5357'
+lightblue = '#3a3e42'
 
 itemSelected = []
+iconMesh = QtGui.QIcon(":/mesh.svg")
+iconRef = QtGui.QIcon(":/reference.svg")
+iconCurve = QtGui.QIcon(":/nurbsCurve.svg")
+iconCam = QtGui.QIcon(":/camera.svg")
+iconLight = QtGui.QIcon(":/ambientLight.svg")
 
 
 
@@ -107,15 +112,19 @@ class cloneReference(QtWidgets.QMainWindow):
 
         # Filter items
         self.itemFilterLabel = QtWidgets.QLabel('Show:')
+        
         self.itemFilterVisibleChk = QtWidgets.QCheckBox('Visible nodes only')
         self.itemFilterVisibleChk.setChecked(True)
         self.itemFilterVisibleChk.setStyleSheet('background-color:' + lightblue)
         self.itemFilterVisibleChk.stateChanged.connect(self.itemReload)
+        
         self.itemFilterRefNodesChk = QtWidgets.QCheckBox('Reference nodes only')
         self.itemFilterRefNodesChk.setChecked(True)
         self.itemFilterRefNodesChk.setStyleSheet('background-color:' + lightblue)
         self.itemFilterRefNodesChk.stateChanged.connect(self.itemReload)
+        
         self.itemFilterTopNodesChk = QtWidgets.QCheckBox('Top nodes only')
+        self.itemFilterTopNodesChk.setChecked(True)
         self.itemFilterTopNodesChk.setStyleSheet('background-color:' + lightblue)
         self.itemFilterTopNodesChk.stateChanged.connect(self.itemReload)
         
@@ -209,7 +218,7 @@ class cloneReference(QtWidgets.QMainWindow):
         self.cloneBtn = QtWidgets.QPushButton('Clone Reference')
         self.cloneBtn.setFixedHeight(85)
         self.cloneBtn.clicked.connect(self.clone)
-       
+    
         
 
  
@@ -280,7 +289,26 @@ class cloneReference(QtWidgets.QMainWindow):
             self.statusBar.setStyleSheet('background-color:' + red)
         else:
             self.itemQList.clear()
-            self.itemQList.addItems(selection)
+            #self.itemQList.addItems(selection)
+            for item in selection:
+                parents = cmds.listRelatives(item)
+                
+                for p in parents:
+                    itemType = cmds.nodeType(p)
+                print (itemType)
+                if itemType == 'mesh':
+                    itemIcon = iconMesh
+                elif itemType == 'nurbsCurve':
+                    itemIcon = iconCurve
+                elif itemType == 'camera':
+                    itemIcon = iconCam
+                elif 'Light' in itemType:
+                    itemIcon = iconLight
+                else:
+                    itemIcon = iconRef
+                
+                self.itemQList.addItem(QtWidgets.QListWidgetItem(itemIcon, str(item)))   
+            
             self.itemQList.selectAll()
 
     
@@ -298,7 +326,7 @@ class cloneReference(QtWidgets.QMainWindow):
 
 
     def itemLoad(self):
-        itemType = 'transform'
+        #itemType = 'transform'
         dag = 1
         itemTranforms = 1
         global itemList
@@ -322,13 +350,24 @@ class cloneReference(QtWidgets.QMainWindow):
             itemTranforms = 1
             dag = 1
 
+        
+        itemNode = cmds.ls(transforms=itemTranforms, dag=dag, v=itemVisible, rn=itemRefs, assemblies=itemTop)
         itemList = []
-        itemList.append(cmds.ls(transforms=itemTranforms, dag=dag, v=itemVisible, rn=itemRefs, assemblies=itemTop))
+        itemList.append(itemNode)
         
         for item in itemList:
-            # item = [w.replace('Shape', '') for w in item]
-            item.sort()
-            self.itemQList.addItems(item)
+            for n in range(len(item)):
+                
+                parents = cmds.listRelatives(item[n])
+                for p in parents:
+                    itemType = cmds.nodeType(p)
+                print (itemType)
+                if itemType == 'mesh':
+                    itemIcon = iconMesh
+                else:
+                    itemIcon = iconRef
+                
+                self.itemQList.addItem(QtWidgets.QListWidgetItem(itemIcon, str(item[n])))
 
 
     ### Get selected items in itemQList
