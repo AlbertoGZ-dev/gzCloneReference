@@ -1,7 +1,7 @@
 # cloneReference
 **cloneReference** is a tool for Maya to clone or create multiple copies of external references keeping transforms from initial reference.
 
-<img src="https://github.com/AlbertoGZ-dev/gzCloneReference_Maya/blob/main/docs/gzCloneReference.png"></img>
+<img src="https://github.com/AlbertoGZ-dev/gzCloneReference_Maya/blob/master/docs/gzCloneReference.png"></img>
 
 ## Setup
 Download package from [here](https://github.com/AlbertoGZ-dev/gzCloneReference_Maya/releases/)
