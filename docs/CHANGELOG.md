@@ -9,3 +9,8 @@ Initial release.
 
 ### v0.1.2
 - Showing Maya icons in the items list.
+
+
+### v0.1.3
+- Rebuilt UI/Theme colors.
+- Added installers.

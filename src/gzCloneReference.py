@@ -1,9 +1,9 @@
 '''
 ████████████████████████████████████████████████████████████████████████████
     
-    Clone Reference for Maya
+    gzCloneReference for Maya
     
-    Description: Clone Reference is a tool to clone or create multiple
+    Description: gzCloneReference is a tool to clone or create multiple
     copies of external references keeping transforms from initial reference.
 
 
@@ -15,31 +15,49 @@
 
 '''
 
-from select import select
 from PySide2 import QtCore, QtWidgets, QtGui
 from shiboken2 import wrapInstance
+from pathlib import Path
 
 import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 import maya.api.OpenMaya as om
-# import re
-# import os
+import json
+import os
 
 
 # GENERAL VARS
-version = '0.1.2'
-about = 'by Alberto GZ'
-winWidth = 520
+title = 'gzCloneReference'
+version = '0.1.3'
+about = 'by AlbertoGZ'
+winWidth = 550
 winHeight = 500
+scriptPath = os.path.dirname(__file__)
+configFile = ''
+logo = scriptPath+'/icons/gzCloneReferenceIcon.png'
+icon = QtGui.QIcon(logo)
+pixmap = QtGui.QPixmap(logo)
+
+# colors
 red = '#872323'
 green = '#207527'
 lightbrown = '#7d654b'
 lightpurple = '#604b69'
 lightgreen = '#5b694b'
-lightblue = '#3a3e42'
+lightblue = '#3e5158'
+lightgrey = '#999'
+midgrey = '#777'
+darkgrey = '#111'
+darkgrey2 = '#222'
+magent = '#b31248'
+cyan = '#07888c'
+yellow = '#c7b600'
+orange = '#b8810a'
+white = '#c9c9c9'
+black = '#1a1a1a'
 
 itemSelected = []
-iconMesh = QtGui.QIcon(":/mesh.svg")
+iconMesh = QtGui.QIcon(":/reference.svg")
 iconRef = QtGui.QIcon(":/reference.svg")
 iconCurve = QtGui.QIcon(":/nurbsCurve.svg")
 iconCam = QtGui.QIcon(":/camera.svg")
@@ -53,45 +71,68 @@ def getMainWindow():
     return mainWindow
 
 
-class cloneReference(QtWidgets.QMainWindow):
+class gzCloneReference(QtWidgets.QMainWindow):
 
     def __init__(self, parent=getMainWindow()):
-        super(cloneReference, self).__init__(parent, QtCore.Qt.WindowStaysOnTopHint)
+        super(gzCloneReference, self).__init__(parent, QtCore.Qt.WindowStaysOnTopHint)
 
     
 
-    #####################################################
-    #                  LAYOUT DESIGN                    #
-    #####################################################
+        #####################################################
+        #                MAIN LAYOUT DESIGN                 #
+        #####################################################
 
         # Creates object, Title Name and Adds a QtWidget as our central widget/Main Layout
-        self.setObjectName('cloneReferenceUI')
-        self.setWindowTitle('cloneReference' + ' ' + 'v' + version + ' - ' + about)
-        mainLayout = QtWidgets.QWidget(self)
-        self.setCentralWidget(mainLayout)
+        self.setObjectName(title+'UI')
+        self.setWindowTitle(title + ' ' + 'v' + version + ' - ' + about)
+        self.setWindowIcon(icon)
         
-        # Adding a Horizontal layout to divide the UI in columns
-        columns = QtWidgets.QHBoxLayout(mainLayout)
+        self.tabs = QtWidgets.QTabWidget(self)
+        self.tabs.setStyleSheet('background-color:' + darkgrey2)
 
-        # Creating vertical layout
-        self.col1 = QtWidgets.QVBoxLayout()
-        self.col2 = QtWidgets.QVBoxLayout()
+        tab1Layout = QtWidgets.QWidget(self)
+        tab2Layout = QtWidgets.QWidget(self)
+
+        self.tabs.addTab(tab1Layout, 'Clone')
+        self.tabs.addTab(tab2Layout, 'About')
+
+        self.tabs.currentChanged.connect(self.onTabChange)
        
-        # Set columns for each layout using stretch policy
-        columns.addLayout(self.col1, 2)
-        columns.addLayout(self.col2, 2)
+        self.tabs.setStyleSheet('QTabWidget::pane {border: 1px solid' + magent + ';}' 'QTabBar::tab:selected {background-color:'+ magent +';}')
+
+        self.setCentralWidget(self.tabs)
        
-        # Adding layouts
+
+
+        '''
+        |‾‾‾‾‾‾\________________________________________
+        |                                               |
+        |   CLONE TAB                                   |
+        |                                               |
+                                                      '''
+        ### LAYOUT
+        # Creating layouts
+        cols = QtWidgets.QHBoxLayout(tab1Layout)
+
+        # Creating N vertical layout
+        col1 = QtWidgets.QVBoxLayout()
+        col2 = QtWidgets.QVBoxLayout()
+
         layout1 = QtWidgets.QVBoxLayout()
         layout1 = QtWidgets.QVBoxLayout()
         layout1A = QtWidgets.QVBoxLayout()
         layout1B = QtWidgets.QHBoxLayout()
         layout2 = QtWidgets.QGridLayout(alignment=QtCore.Qt.AlignTop)
         layout3 = QtWidgets.QVBoxLayout()
-         
-        self.col1.addLayout(layout1)
-        self.col2.addLayout(layout2)
-        self.col2.addLayout(layout3)
+
+
+        # Adding layouts
+        cols.addLayout(col1, 0)
+        cols.addLayout(col2, 1)
+
+        col1.addLayout(layout1)
+        col2.addLayout(layout2)
+        col2.addLayout(layout3)
        
         layout1.addLayout(layout1A)
         layout1.addLayout(layout1B)
@@ -101,13 +142,13 @@ class cloneReference(QtWidgets.QMainWindow):
         
        
 
-    #####################################################
-    #                     UI ELEMENTS                   #
-    #####################################################
+        #####################################################
+        #                     UI ELEMENTS                   #
+        #####################################################
 
         # Get selected button
         self.itemGetSelectedBtn = QtWidgets.QPushButton('Get selected')
-        self.itemGetSelectedBtn.setStyleSheet('background-color:' + lightblue)
+        self.itemGetSelectedBtn.setStyleSheet('background-color:' + black)
         self.itemGetSelectedBtn.clicked.connect(self.itemGetSelected)
 
         # Filter items
@@ -115,17 +156,17 @@ class cloneReference(QtWidgets.QMainWindow):
         
         self.itemFilterVisibleChk = QtWidgets.QCheckBox('Visible nodes only')
         self.itemFilterVisibleChk.setChecked(True)
-        self.itemFilterVisibleChk.setStyleSheet('background-color:' + lightblue)
+        self.itemFilterVisibleChk.setStyleSheet('background-color:' + black)
         self.itemFilterVisibleChk.stateChanged.connect(self.itemReload)
         
         self.itemFilterRefNodesChk = QtWidgets.QCheckBox('Reference nodes only')
         self.itemFilterRefNodesChk.setChecked(True)
-        self.itemFilterRefNodesChk.setStyleSheet('background-color:' + lightblue)
+        self.itemFilterRefNodesChk.setStyleSheet('background-color:' + black)
         self.itemFilterRefNodesChk.stateChanged.connect(self.itemReload)
         
         self.itemFilterTopNodesChk = QtWidgets.QCheckBox('Top nodes only')
         self.itemFilterTopNodesChk.setChecked(True)
-        self.itemFilterTopNodesChk.setStyleSheet('background-color:' + lightblue)
+        self.itemFilterTopNodesChk.setStyleSheet('background-color:' + black)
         self.itemFilterTopNodesChk.stateChanged.connect(self.itemReload)
         
         # SearchBox input for filter list
@@ -134,7 +175,7 @@ class cloneReference(QtWidgets.QMainWindow):
         self.itemValidator = QtGui.QRegExpValidator(self.itemRegex)
         self.itemSearchBox.setValidator(self.itemValidator)
         self.itemSearchBox.textChanged.connect(self.itemFilter)
-        self.itemSearchBox.setStyleSheet('background-color:' + lightblue)
+        self.itemSearchBox.setStyleSheet('background-color:' + black)
         self.itemSearchBox.setPlaceholderText("Search...")
 
         # List of items
@@ -142,7 +183,7 @@ class cloneReference(QtWidgets.QMainWindow):
         self.itemQList.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.itemQList.setMinimumWidth(150)
         self.itemQList.itemSelectionChanged.connect(self.itemSel)
-        self.itemQList.setStyleSheet('background-color:' + lightblue)
+        self.itemQList.setStyleSheet('background-color:' + black)
 
         self.itemSelectLabel = QtWidgets.QLabel('Select')
         
@@ -150,18 +191,18 @@ class cloneReference(QtWidgets.QMainWindow):
         self.itemSelectAllBtn = QtWidgets.QPushButton('All')
         self.itemSelectAllBtn.setFixedWidth(70)
         self.itemSelectAllBtn.clicked.connect(self.itemSelectAll)
-        self.itemSelectAllBtn.setStyleSheet('background-color:' + lightblue)
+        self.itemSelectAllBtn.setStyleSheet('background-color:' + black)
 
         # None button select
         self.itemSelectNoneBtn = QtWidgets.QPushButton('None')
         self.itemSelectNoneBtn.setFixedWidth(70)
         self.itemSelectNoneBtn.clicked.connect(self.itemSelectNone)
-        self.itemSelectNoneBtn.setStyleSheet('background-color:' + lightblue)
+        self.itemSelectNoneBtn.setStyleSheet('background-color:' + black)
 
         # Reload button
         self.itemReloadBtn = QtWidgets.QPushButton('Reload')
         self.itemReloadBtn.clicked.connect(self.itemReload)
-        self.itemReloadBtn.setStyleSheet('background-color:' + lightblue)
+        self.itemReloadBtn.setStyleSheet('background-color:' + black)
 
         # Status bar
         self.statusBar = QtWidgets.QStatusBar()
@@ -216,8 +257,10 @@ class cloneReference(QtWidgets.QMainWindow):
     
         # Clone Reference button
         self.cloneBtn = QtWidgets.QPushButton('Clone Reference')
-        self.cloneBtn.setFixedHeight(85)
+        self.cloneBtn.setFixedHeight(60)
         self.cloneBtn.clicked.connect(self.clone)
+        self.cloneBtn.setStyleSheet('background-color:' + magent)
+
     
         
 
@@ -261,7 +304,41 @@ class cloneReference(QtWidgets.QMainWindow):
 
         layout3.addWidget(self.cloneBtn)
 
-        self.resize(winWidth, winHeight)    
+
+
+        '''
+        |‾‾‾‾‾‾‾‾\______________________________________
+        |                                               |
+        |   ABOUT TAB                                   |
+        |                                               |
+                                                      '''
+        ### LAYOUT
+        # Creating layouts
+        aboutLayout = QtWidgets.QHBoxLayout(tab2Layout)  
+        layout1 = QtWidgets.QVBoxLayout(alignment=QtCore.Qt.AlignCenter)   
+        # Adding layouts
+        aboutLayout.addLayout(layout1)
+
+
+        ### UI ELEMENTS
+        self.aboutIcon = QtWidgets.QLabel()
+        self.aboutIcon.setPixmap(pixmap)
+        self.aboutIcon.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)    
+        self.aboutLabel = QtWidgets.QLabel('gzCloneReference\nv'+version+'\n'+about+'\n\ngzCloneReference is a tool to clone or create \nmultiple copies of external references\n keeping transforms from initial reference.\n\n')
+        self.aboutLabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
+
+
+         ### ADDING ELEMENTS TO LAYOUT
+        layout1.addWidget(self.aboutIcon)
+        layout1.addWidget(self.aboutLabel)
+
+       
+
+        ### GLOBAL UI WINDOW
+        #
+        self.resize(winWidth, winHeight)
+
+  
 
 
         
@@ -280,6 +357,17 @@ class cloneReference(QtWidgets.QMainWindow):
     #####################################################
     #                      FUNCTIONS                    #
     #####################################################
+
+
+    ### UI Settings by Tab
+    #
+    def onTabChange(self, i): 
+        #self.statusBar.showMessage(str(i), 2000)
+        if i == 0:
+            self.tabs.setStyleSheet('QTabWidget::pane {border: 1px solid' + magent + '; background-color:' + darkgrey2 +'}' 'QTabBar::tab:selected {background-color:' + magent +';}')
+        if i == 1:
+            self.tabs.setStyleSheet('QTabWidget::pane {border: 1px solid' + magent + '; background-color:' + darkgrey2 +'}' 'QTabBar::tab:selected {background-color:' + magent +';}')
+
 
     
     def itemGetSelected(self):
@@ -524,7 +612,7 @@ class cloneReference(QtWidgets.QMainWindow):
 #####################################################
 
 if __name__ == '__main__':
-    win = cloneReference(parent=getMainWindow())
+    win = gzCloneReference(parent=getMainWindow())
     try:
         win.close()
     except:
