@@ -118,9 +118,10 @@ def uninstall():
                 # Uninstall completed
                 print('█████████████████████████████████████████████████████████████████████████████████')
                 print('██                                                                             ██')
-                print('██           '+scriptName+' uninstalled successfully for Maya '+currentVersion+'!         ██')
+                print('██           '+scriptName+' uninstalled successfully for Maya '+currentVersion+'!          ██')
                 print('██                                                                             ██')
                 print('█████████████████████████████████████████████████████████████████████████████████')
+                print('\n')
                 sleep(1)
             else:
                 print('[ FAILED ]\n' )
